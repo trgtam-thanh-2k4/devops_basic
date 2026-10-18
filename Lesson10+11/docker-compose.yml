@@ -1,0 +1,27 @@
+# Local test only: API + MySQL on your machine before deploying to AWS
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: appdb
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin123
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build: ./app
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: admin
+      DB_PASSWORD: admin123
+      DB_NAME: appdb
+    ports:
+      - "8088:5000"
+    depends_on:
+      db:
+        condition: service_healthy
