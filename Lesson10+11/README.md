@@ -3,23 +3,36 @@
 ## Architecture
 
 ```
-                 Internet
-                    │  http://<PUBLIC_IP>:5000
-                    ▼
-┌──────────────────────── AWS Region (ap-southeast-1) ────────────────────────┐
-│  Default VPC                                                                 │
-│                                                                              │
-│   ┌──────── sg-ecs-api ────────┐          ┌──────── sg-rds-mysql ───────┐    │
-│   │ inbound: 5000 from 0.0.0.0/0│  3306   │ inbound: 3306 from sg-ecs-api│    │
-│   │                             │ ──────▶ │                              │    │
-│   │  ECS Fargate Task           │         │  RDS MySQL 8.0 (db.t3.micro) │    │
-│   │  Flask API (gunicorn :5000) │         │  database: appdb             │    │
-│   │  public IP: yes             │         │  public access: NO           │    │
-│   └─────────────────────────────┘         └──────────────────────────────┘    │
-│              ▲ pulls image                                                   │
-└──────────────┼───────────────────────────────────────────────────────────────┘
-               │
-        Docker Hub / ECR  (image: flask-mysql-api)
+                                 Internet  (browser / curl)
+                                 │  http://<PUBLIC_IP>:5000
+                                 ▼
+┌── AWS Region ap-southeast-1 (Singapore) ─────────────────────────────────────────────────────────┐
+│ ┌─ VPC ────────────────────────────────────────────────────────────────────────────────────────┐ │
+│ │                     ┌──────────────────┐                                                     │ │
+│ │                     │ Internet Gateway │                                                     │ │
+│ │                     └────────┬─────────┘                                                     │ │
+│ │                              ▼ :5000                                                         │ │
+│ │ ┌─ Public subnet ────────────────────────┐        ┌─ Private subnets (DB subnet group) ────┐ │ │
+│ │ │ route: 0.0.0.0/0 → IGW                 │        │ route: local only, no IGW              │ │ │
+│ │ │                                        │        │                                        │ │ │
+│ │ │ ┌─ sg-ecs-api ───────────────────────┐ │        │ ┌─ sg-rds-mysql ─────────────────────┐ │ │ │
+│ │ │ │ in: TCP 5000 from 0.0.0.0/0        │ │        │ │ in: TCP 3306 from sg-ecs-api       │ │ │ │
+│ │ │ │                                    │ │        │ │                                    │ │ │ │
+│ │ │ │ ┌────────────────────────────────┐ │ │  3306  │ │ ┌────────────────────────────────┐ │ │ │ │
+│ │ │ │ │ ECS Fargate task               │ │ │───────▶│ │ │ RDS MySQL 8.4 (db.t4g.micro)   │ │ │ │ │
+│ │ │ │ │ Flask API (gunicorn :5000)     │ │ │        │ │ │ database: appdb, table: users  │ │ │ │ │
+│ │ │ │ │ image: flask-mysql-api:v1      │ │ │        │ │ │ public access: No              │ │ │ │ │
+│ │ │ │ │ public IP: yes                 │ │ │        │ │ │ no public IP                   │ │ │ │ │
+│ │ │ │ └────────────────────────────────┘ │ │        │ │ └────────────────────────────────┘ │ │ │ │
+│ │ │ └────────────────────────────────────┘ │        │ └────────────────────────────────────┘ │ │ │
+│ │ └────────────────────────────────────────┘        └────────────────────────────────────────┘ │ │
+│ └──────────────────────────────────────────────────────────────────────────────────────────────┘ │
+│                                                                                                  │
+│ ECR flask-mysql-api:v1  ── pull image ──▶  ECS task (via ecsTaskExecutionRole)                   │
+│ ECS task  ── container logs ──▶  CloudWatch Logs /ecs/flask-mysql-api                            │
+└──────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+Developer Mac ── docker buildx --platform linux/amd64 --push ──▶ ECR
 ```
 
 ## Project files
@@ -81,7 +94,7 @@ docker buildx build --platform linux/amd64 -t $ACCOUNT_ID.dkr.ecr.$REGION.amazon
 
 ## Step 2: Create two Security Groups
 
-In the AWS Console, go to **EC2 → Security Groups → Create security group**, using the default VPC:
+In the AWS Console, go to **EC2 → Security Groups → Create security group**, in the same VPC as your subnets:
 
 1. **sg-ecs-api**
    - Inbound: Custom TCP, port `5000`, source `0.0.0.0/0`
@@ -95,14 +108,15 @@ This rule means only the ECS task can reach the DB.
 Go to **RDS → Create database**:
 
 - Creation method: **Standard create**
-- Engine: **MySQL 8.0**
+- Engine: **MySQL 8.4** (8.0 also works)
 - Template: **Free tier**
 - DB instance identifier: `lesson10-mysql`
 - Master username: `admin`, and set a master password (write it down)
 - Instance class: `db.t3.micro` or `db.t4g.micro`
 - Storage: 20 GB gp2/gp3, turn off storage autoscaling
 - Connectivity:
-  - VPC: Default VPC
+  - VPC: the same VPC as the ECS subnets
+  - DB subnet group: a group with **private subnets only** (at least 2 AZs; route table has no route to the Internet Gateway). Create it first in **RDS → Subnet groups** if needed.
   - **Public access: No**
   - VPC security group: choose existing **sg-rds-mysql** (remove `default`)
 - **Additional configuration → Initial database name: `appdb`** (important: if you skip this, the DB doesn't exist)
@@ -152,7 +166,7 @@ Open the cluster `lesson10-cluster` → **Services → Create**:
 - Task definition: `flask-mysql-api` (latest revision)
 - Service name: `flask-api-svc`, Desired tasks: `1`
 - Networking:
-  - VPC: Default VPC, subnets: the public subnets (all default subnets are public)
+  - VPC: the same VPC, subnets: **public subnets only** (route table has `0.0.0.0/0 → Internet Gateway`)
   - Security group: **sg-ecs-api** only (remove `default`)
   - **Public IP: Turned ON** (without this the task can't pull images or be reached)
 - Load balancing: None
