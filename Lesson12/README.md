@@ -2,8 +2,6 @@
 
 **Requirement:** Build a Nuxt project, deploy it with S3 + CloudFront, and submit the CloudFront link.
 
-CloudFront link: `https://<xxxxxxxx>.cloudfront.net` ← fill in after Step 6
-
 ## Architecture
 
 ```
@@ -94,25 +92,32 @@ CloudFront → **Functions** → **Create function**
 
 ## Step 6: Create the CloudFront distribution
 
-CloudFront → **Distributions** → **Create distribution**. (The new console uses a wizard. Field names may differ slightly.)
+CloudFront → **Distributions** → **Create distribution**. The console uses a 4-step wizard. OAC is now a single checkbox. The function and the default root object are not in the wizard, so you set them after creation (6b).
 
-1. **Origin**
-   - Origin type: Amazon S3 → choose bucket `lesson12-nuxt-<your-name>.s3.ap-southeast-1.amazonaws.com`
-   - Origin access: **Origin access control settings (recommended)** → **Create new OAC** (Sign requests: yes) → Create
-   - If the wizard offers "Allow private S3 bucket access to CloudFront / update bucket policy automatically" → choose **Yes**
-2. **Default cache behavior**
-   - Viewer protocol policy: **Redirect HTTP to HTTPS**
-   - Allowed methods: GET, HEAD
-   - Cache policy: `CachingOptimized`
-   - **Function associations → Viewer request** → CloudFront Functions → `nuxt-index-rewrite`
-3. **Web Application Firewall**: Do not enable (saves cost)
-4. **Settings**
-   - Price class: *Use only North America and Europe* (cheapest) or *Asia* if you want
-   - **Default root object: `index.html`**
-5. → **Create distribution**
+### 6a. Wizard
 
-**Bucket policy**: if the wizard did not update it automatically, a yellow banner shows **Copy policy**. Copy it, then go to S3 → bucket → Permissions → Bucket policy → Edit → paste → Save.
-(It matches `cloudfront/bucket-policy.json` with your bucket name, account ID, and distribution ID filled in.)
+1. **Get started**: distribution name `lesson12-nuxt`. Pick the **Free** plan if offered, otherwise pay-as-you-go.
+2. **Specify origin**
+   - Origin type: **Amazon S3**
+   - S3 origin: **Browse S3** → choose `lesson12-nuxt-<your-name>`
+   - Origin path: leave empty
+   - ✅ **Allow private S3 bucket access to CloudFront - Recommended**. This creates the **OAC** for you and adds the bucket policy automatically.
+   - Origin settings: **Use recommended origin settings**
+   - Cache settings: **Use recommended cache settings tailored to serving S3 content** (`CachingOptimized`, HTTP redirected to HTTPS)
+3. **Enable security**: **Do not enable** WAF (avoids extra cost)
+4. **Review and create** → **Create distribution**
+
+### 6b. Settings the wizard skips
+
+- **Default root object**: distribution → **General** → **Settings** → **Edit** → Default root object `index.html` → **Save changes**
+- **Function**: distribution → **Behaviors** → select `Default (*)` → **Edit** → bottom section **Function associations** → **Viewer request**: Function type `CloudFront Functions`, Function `nuxt-index-rewrite` → **Save changes**
+  (Skip this if you use the custom error page method in Step 7.)
+
+### 6c. Check OAC and bucket policy
+
+- Distribution → **Origins** → select the origin → **Edit**: Origin access should show **Origin access control settings** with an OAC selected.
+- S3 → bucket → **Permissions** → **Bucket policy**: it should allow `cloudfront.amazonaws.com` with your distribution ARN, like `cloudfront/bucket-policy.json`.
+  If the policy is empty, the origin **Edit** page shows a **Copy policy** button. Paste the copied policy here and save.
 
 📸 Evidence: `evidence/05-cloudfront-distribution.png`, `evidence/06-bucket-policy.png`
 
