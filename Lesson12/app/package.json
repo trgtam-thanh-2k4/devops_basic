@@ -1,0 +1,14 @@
+{
+  "name": "nuxt-s3-cloudfront",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview"
+  },
+  "dependencies": {
+    "nuxt": "^4.6.2"
+  }
+}
