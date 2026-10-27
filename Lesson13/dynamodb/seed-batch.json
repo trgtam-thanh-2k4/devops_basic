@@ -1,0 +1,109 @@
+{
+  "lesson13-users": [
+    {
+      "PutRequest": {
+        "Item": {
+          "id": {
+            "S": "u001"
+          },
+          "name": {
+            "S": "Nguyen Van An"
+          },
+          "email": {
+            "S": "an.nguyen@example.com"
+          },
+          "role": {
+            "S": "admin"
+          },
+          "createdAt": {
+            "S": "2026-10-01"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "id": {
+            "S": "u002"
+          },
+          "name": {
+            "S": "Tran Thi Binh"
+          },
+          "email": {
+            "S": "binh.tran@example.com"
+          },
+          "role": {
+            "S": "developer"
+          },
+          "createdAt": {
+            "S": "2026-10-05"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "id": {
+            "S": "u003"
+          },
+          "name": {
+            "S": "Le Hoang Cuong"
+          },
+          "email": {
+            "S": "cuong.le@example.com"
+          },
+          "role": {
+            "S": "devops"
+          },
+          "createdAt": {
+            "S": "2026-10-12"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "id": {
+            "S": "u004"
+          },
+          "name": {
+            "S": "Pham Minh Duc"
+          },
+          "email": {
+            "S": "duc.pham@example.com"
+          },
+          "role": {
+            "S": "developer"
+          },
+          "createdAt": {
+            "S": "2026-10-20"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "id": {
+            "S": "u005"
+          },
+          "name": {
+            "S": "Vo Thi Em"
+          },
+          "email": {
+            "S": "em.vo@example.com"
+          },
+          "role": {
+            "S": "tester"
+          },
+          "createdAt": {
+            "S": "2026-10-25"
+          }
+        }
+      }
+    }
+  ]
+}

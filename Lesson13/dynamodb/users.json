@@ -1,0 +1,7 @@
+[
+  { "id": "u001", "name": "Nguyen Van An", "email": "an.nguyen@example.com", "role": "admin", "createdAt": "2026-10-01" },
+  { "id": "u002", "name": "Tran Thi Binh", "email": "binh.tran@example.com", "role": "developer", "createdAt": "2026-10-05" },
+  { "id": "u003", "name": "Le Hoang Cuong", "email": "cuong.le@example.com", "role": "devops", "createdAt": "2026-10-12" },
+  { "id": "u004", "name": "Pham Minh Duc", "email": "duc.pham@example.com", "role": "developer", "createdAt": "2026-10-20" },
+  { "id": "u005", "name": "Vo Thi Em", "email": "em.vo@example.com", "role": "tester", "createdAt": "2026-10-25" }
+]

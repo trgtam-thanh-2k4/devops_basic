@@ -1,0 +1,14 @@
+{
+  "name": "lesson13-get-users",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "index.mjs",
+  "scripts": {
+    "test:local": "node test-local.mjs"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-dynamodb": "^3.600.0",
+    "@aws-sdk/lib-dynamodb": "^3.600.0"
+  }
+}
